@@ -87,7 +87,7 @@ const compiler = webpack({
     },
   },
   cache: false,
-  devtool: "cheap-source-map",
+  devtool: isProd ? false : "cheap-source-map",
 });
 
 function showMsg(err, stats) {
