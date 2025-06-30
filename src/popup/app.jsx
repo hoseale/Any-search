@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
-import { Button, Switch } from "antd";
+import { Button, Typography } from "antd";
+const { Text } = Typography;
 
 export default function () {
   const toOpion = useCallback(() => {
@@ -12,13 +13,18 @@ export default function () {
 
   return (
     <div style={{ width: 375 }}>
-      <h3>Instructions</h3>
-      <p>1. Input 'as' in the address bar.</p>
-      <p>2. Select 'Any Search'. (press the space bar to quickly select)</p>
-      <p>3. Input the search engine key + space + the field you want to search, such as 'go google translate'.</p>
-
-      <p>'go' means google search, you can change it if you don't like it.</p>
-      <p>In addition, you can directly input 'google translate', and the default engine will be used.</p>
+      <h3>Quick Start Guide</h3>
+      <p>
+        1. Type <Text code>as</Text> in browser address bar, then press Tab or
+        Space to activate
+      </p>
+      <p>
+        2. Enter your search command: <Text code>[engine-key] [query]</Text>
+      </p>
+      <p>
+        Example: <Text code>gt hello world</Text> (searches "hello world" on
+        Google Translate)
+      </p>
 
       <Button type="link" size="small" onClick={toOpion}>
         Manage search engines

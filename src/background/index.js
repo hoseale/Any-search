@@ -1,9 +1,14 @@
 const defaultEngines = [
   {
     path: "https://www.google.com/search?q={}",
-    key: "go",
+    key: "g",
     title: "Google",
     isDefault: true,
+  },
+  {
+    path: "https://chatgpt.com/?q={}",
+    key: "cg",
+    title: "ChatGPT",
   },
   {
     path: "https://www.bing.com/search?q={}",
@@ -52,7 +57,7 @@ const defaultEngines = [
   },
   {
     path: "https://github.com/search?q={}&type=repositories",
-    key: "git",
+    key: "gh",
     title: "Github",
   },
   {
@@ -64,7 +69,7 @@ const defaultEngines = [
 
 const defaultFirstEngine = {
   path: "https://www.google.com/search?q={}",
-  key: "go",
+  key: "g",
   title: "Google",
 };
 
@@ -76,7 +81,6 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     try {
       data = await chrome.storage.sync.get(["ssEnginesData"]);
     } catch (error) {}
-    console.log(data.ssEnginesData,'data.ssEnginesDatadata.ssEnginesData');
     if (!data.ssEnginesData) {
       chrome.storage.sync.set({
         ssEnginesData: {
@@ -89,26 +93,39 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
 
 chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
   const { key, keyword } = getInputInfo(input);
-  const { ssEnginesData = {} } = await chrome.storage.sync.get("ssEnginesData");
-  const engines = ssEnginesData.engines || [];
 
-  const filters = engines.filter((val) => {
-    return (
-      val.title.toLowerCase().indexOf(keyword.toLowerCase()) > -1 ||
-      val.key.toLowerCase().indexOf(keyword.toLowerCase()) > -1 ||
-      (key && val.key.toLowerCase().indexOf(key.toLowerCase()) > -1) ||
-      (key && val.title.toLowerCase().indexOf(key.toLowerCase()) > -1)
-    );
-  });
+  const { engines } = await getSearchEngine();
+  let filters = engines;
+
+  if (key) {
+    filters = engines.filter((val) => {
+      return (
+        (key && val.key.toLowerCase().indexOf(key.toLowerCase()) > -1) ||
+        (key && val.title.toLowerCase().indexOf(key.toLowerCase()) > -1)
+      );
+    });
+  } else if (keyword) {
+    filters = engines.filter((val) => {
+      return (
+        val.key.toLowerCase().indexOf(keyword.toLowerCase()) > -1 ||
+        val.title.toLowerCase().indexOf(keyword.toLowerCase()) > -1
+      );
+    });
+  }
 
   const suggestions = filters.map((item) => {
     return {
-      content: `${item.key} keywords`,
+      content: `${item.key} `,
       description: `${item.title}: ${item.key}`,
     };
   });
 
-  suggest(suggestions);
+  const sys = {
+    content: `sys`,
+    description: "Extension Settings: sys",
+  };
+
+  suggest([sys, ...suggestions]);
 });
 
 /**
@@ -126,10 +143,7 @@ chrome.omnibox.onInputEntered.addListener(async (input, a, b, c) => {
 
   let selEngine = null; // search engine
 
-  const { ssEnginesData = {} } = await chrome.storage.sync.get("ssEnginesData");
-  const engines = ssEnginesData.engines || [];
-
-  const defaultEngine = engines.find((val) => val.isDefault) || defaultFirstEngine;
+  const { engines, defaultEngine } = await getSearchEngine();
 
   let { key, keyword } = getInputInfo(input);
 
@@ -137,11 +151,6 @@ chrome.omnibox.onInputEntered.addListener(async (input, a, b, c) => {
     selEngine = engines.find((val) => val.key === key);
     if (!selEngine) {
       keyword = input;
-    }
-  } else {
-    selEngine = engines.find((val) => val.key === keyword);
-    if (selEngine) {
-      keyword = ''
     }
   }
   selEngine = selEngine || defaultEngine;
@@ -164,7 +173,8 @@ function getInputInfo(input) {
   let key = "";
   let keyword = "";
 
-  input = input.trim();
+  // 只去除前面空格
+  input = input.replace(/^\s+/, "");
   const matchRes = input.match(inputReg);
 
   if (matchRes) {
@@ -174,6 +184,20 @@ function getInputInfo(input) {
     keyword = input;
   }
   return { key, keyword };
+}
+
+// 获取所有搜索引擎
+async function getSearchEngine(key) {
+  const { ssEnginesData = {} } = await chrome.storage.sync.get("ssEnginesData");
+  const engines = ssEnginesData.engines || [];
+
+  const defaultEngine =
+    engines.find((val) => val.isDefault) || defaultFirstEngine;
+
+  return {
+    engines,
+    defaultEngine,
+  };
 }
 
 /**

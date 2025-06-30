@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Space, Button, Table, Tag, Modal, Form, Input, message, Col, Row, Tooltip } from "antd";
+import {
+  Space,
+  Button,
+  Table,
+  Tag,
+  Modal,
+  Form,
+  Input,
+  message,
+  Col,
+  Row,
+  Tooltip,
+} from "antd";
 import { QuestionCircleOutlined } from "@ant-design/icons";
+import UsageInstructions from "./components/UsageInstructions";
+import SupportAuthor from "./components/SupportAuthor";
 
 export default function () {
   const [data, setData] = useState([]);
@@ -17,7 +31,9 @@ export default function () {
   }, []);
 
   const initFn = useCallback(async () => {
-    const { ssEnginesData = {} } = await chrome.storage.sync.get("ssEnginesData");
+    const { ssEnginesData = {} } = await chrome.storage.sync.get(
+      "ssEnginesData"
+    );
     const engines = ssEnginesData.engines || [];
     setData(engines);
     firstDone.current = true;
@@ -78,7 +94,12 @@ export default function () {
     const key = values.key;
     const hasObj = data.find((val) => val.key === key);
     if (editIndex === -1 && hasObj) {
-      message.error("The same key already exists");
+      message.error("This key already exists. Please use a unique key.");
+      return;
+    }
+
+    if (key === "sys") {
+      message.error("This key is reserved. Please use a different key.");
       return;
     }
 
@@ -100,8 +121,8 @@ export default function () {
     {
       title: (
         <span>
-          title
-          <Tooltip title="when the keyword you enter matches the engine key, the title will be displayed, so you know which engine it is">
+          Title
+          <Tooltip title="Displays the engine title when your keyword matches this engine's key">
             <QuestionCircleOutlined />
           </Tooltip>
         </span>
@@ -111,8 +132,8 @@ export default function () {
     {
       title: (
         <span>
-          key
-          <Tooltip title="the unique identifier of the search engine, the extension will determine which search engine to execute according to the key you input">
+          Key
+          <Tooltip title="Unique engine identifier. The extension uses this key to select the appropriate search engine">
             <QuestionCircleOutlined />
           </Tooltip>
         </span>
@@ -130,8 +151,8 @@ export default function () {
     {
       title: (
         <span>
-          path
-          <Tooltip title="engine address, '{}' will be replaced by the search field you entered">
+          URL Template
+          <Tooltip title="Search engine URL template. The '{}' placeholder will be replaced with your search query">
             <QuestionCircleOutlined />
           </Tooltip>
         </span>
@@ -139,14 +160,14 @@ export default function () {
       dataIndex: "path",
     },
     {
-      title: "action",
+      title: "Actions",
       dataIndex: "action",
       render: (text, record) => {
         const index = data.findIndex((val) => val.key === record.key);
         return (
           <>
             <Button type="link" size="small" onClick={onDel.bind(this, record)}>
-              delete
+              Delete
             </Button>
 
             <Button
@@ -156,48 +177,55 @@ export default function () {
                 setIndex(index);
               }}
             >
-              edit
+              Edit
             </Button>
             {!record.isDefault && (
-              <Button type="link" size="small" onClick={onChangeItem.bind(this, record)}>
-                default
+              <Button
+                type="link"
+                size="small"
+                onClick={onChangeItem.bind(this, record)}
+              >
+                Set as Default
               </Button>
             )}
           </>
         );
       },
+      width: 260,
     },
   ];
 
   return (
     <>
-      <div style={{ padding: "80px 0 40px 0" }}>
+      <div style={{ padding: "100px 0 40px 0" }}>
         <Row justify="center">
           <img style={{ width: 80, height: 80 }} src="../images/logo.png"></img>
         </Row>
         <Row justify="center">
-          <h1>ANY SEARCH</h1>
+          <h1>AnySearch Settings</h1>
+        </Row>
+        <Row justify="center">
+          <Col span={18}>
+            <Row justify="space-between">
+              <h3>Search Engines</h3>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
+                  setAddVisible(true);
+                }}
+              >
+                Add Engine
+              </Button>
+            </Row>
+            <Table dataSource={data} columns={cols} size="small"></Table>
+            <UsageInstructions />
+            <SupportAuthor />
+          </Col>
         </Row>
       </div>
-      <Row justify="center">
-        <Col span={12}>
-          <Row justify="space-between">
-            <h3>Search engine list</h3>
-            <Button
-              type="link"
-              size="small"
-              onClick={() => {
-                setAddVisible(true);
-              }}
-            >
-              Add search engine
-            </Button>
-          </Row>
-          <Table dataSource={data} columns={cols} size="small"></Table>
-        </Col>
-      </Row>
       <Modal
-        title={editIndex > -1 ? "Edit" : "Add"}
+        title={editIndex > -1 ? "Edit Search Engine" : "Add New Search Engine"}
         open={addVisible || editIndex > -1}
         onOk={onOk}
         onCancel={() => {
@@ -206,22 +234,35 @@ export default function () {
         }}
       >
         <Form
+          layout="vertical"
           name="engineItem"
           form={form}
-          labelCol={{ span: 3 }}
-          wrapperCol={{ span: 21 }}
           initialValues={editIndex > -1 ? data[editIndex] : {}}
           onFinish={onFinish}
         >
-          <Form.Item label="title" name="title" rules={[{ required: true, message: "Please input title!" }]}>
+          <Form.Item
+            label="Title"
+            name="title"
+            rules={[{ required: true, message: "Please enter a title" }]}
+          >
             <Input />
           </Form.Item>
 
-          <Form.Item label="key" name="key" rules={[{ required: true, message: "Please input key!" }]}>
+          <Form.Item
+            label="Key"
+            name="key"
+            rules={[{ required: true, message: "Please enter a unique key" }]}
+          >
             <Input />
           </Form.Item>
 
-          <Form.Item label="path" name="path" rules={[{ required: true, message: "Please input path!" }]}>
+          <Form.Item
+            label="URL Template"
+            name="path"
+            rules={[
+              { required: true, message: "Please enter the URL template" },
+            ]}
+          >
             <Input.TextArea />
           </Form.Item>
         </Form>
