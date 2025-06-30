@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "TypeGo",
+  "name": "TypeGo - Search & Navigator",
   "description": "Instantly search or navigate to any website using smart commands. Acts as a URL launcher, search tool, and site navigator.",
   "version": "1.0.1",
   "icons": {
