@@ -1,3 +1,5 @@
+import { initCommands } from "./commands";
+
 const defaultEngines = [
   {
     path: "https://www.google.com/search?q={}",
@@ -216,3 +218,5 @@ async function run(url) {
     url: url,
   });
 }
+
+initCommands();
