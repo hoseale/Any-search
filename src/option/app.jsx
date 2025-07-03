@@ -218,7 +218,12 @@ export default function () {
                 Add Engine
               </Button>
             </Row>
-            <Table dataSource={data} columns={cols} size="small"></Table>
+            <Table
+              dataSource={data}
+              columns={cols}
+              size="small"
+              pagination={{ showSizeChanger: true }}
+            ></Table>
             <UsageInstructions />
             <SupportAuthor />
           </Col>
