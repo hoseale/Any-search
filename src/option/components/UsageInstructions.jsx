@@ -18,8 +18,8 @@ export default function UsageInstructions() {
           key
           <br />
           <Text strong>Example: </Text>
-          <Text code>go how to use anysearch</Text> will search Google for "how
-          to use anysearch"
+          <Text code>go how to use TypeGo</Text> will search Google for "how to
+          use TypeGo"
         </Paragraph>
 
         <Title level={5}>Advanced Features</Title>
@@ -32,7 +32,7 @@ export default function UsageInstructions() {
           without specifying key
           <br />
           <Text strong>Example: </Text>
-          <Text code>how to use anysearch</Text> will search using your default
+          <Text code>how to use TypeGo</Text> will search using your default
           engine
         </Paragraph>
 
@@ -41,7 +41,7 @@ export default function UsageInstructions() {
           search query
           <br />
           <Text strong>Example: </Text>
-          <Text code>https://www.google.com/search?q={}</Text> will search
+          <Text code>{`https://www.google.com/search?q={}`}</Text> will search
           Google with your query
         </Paragraph>
       </Space>

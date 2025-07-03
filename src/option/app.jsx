@@ -202,7 +202,7 @@ export default function () {
           <img style={{ width: 80, height: 80 }} src="../images/logo.png"></img>
         </Row>
         <Row justify="center">
-          <h1>AnySearch Settings</h1>
+          <h1>TypeGo Settings</h1>
         </Row>
         <Row justify="center">
           <Col span={18}>

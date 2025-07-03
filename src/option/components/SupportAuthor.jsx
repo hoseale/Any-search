@@ -13,7 +13,7 @@ export default function SupportAuthor() {
 
   const shareOnPlatform = (platform) => {
     const text = encodeURIComponent(
-      "Check out AnySearch - The ultimate browser extension for command-based multi-engine searches! 🔍\n\n• Supports 100+ search engines (g=Google, gt=Google translate, etc)\n• Fully customizable commands and search engines\n• Lightning-fast results with zero redirects\n\nPerfect for developers, researchers & power users!"
+      "Check out TypeGo - The ultimate browser extension for command-based multi-engine searches! 🔍\n\n• Supports 100+ search engines (g=Google, gt=Google translate, etc)\n• Fully customizable commands and search engines\n• Lightning-fast results with zero redirects\n\nPerfect for developers, researchers & power users!"
     );
     let pluginUrl =
       "https://chromewebstore.google.com/detail/ifgfnphneemmhccaknmidjnhemkhnoah";

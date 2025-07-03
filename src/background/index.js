@@ -125,7 +125,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
     description: "Extension Settings: sys",
   };
 
-  suggest([sys, ...suggestions]);
+  suggest([...suggestions, sys]);
 });
 
 /**
@@ -152,7 +152,13 @@ chrome.omnibox.onInputEntered.addListener(async (input, a, b, c) => {
     if (!selEngine) {
       keyword = input;
     }
+  } else if (keyword) {
+    selEngine = engines.find((val) => val.key === keyword);
+    if (selEngine) {
+      keyword = "";
+    }
   }
+
   selEngine = selEngine || defaultEngine;
 
   const url = selEngine.path.replace("{}", keyword);
