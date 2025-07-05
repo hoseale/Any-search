@@ -1,4 +1,5 @@
-import { initCommands } from "./commands";
+import { initCommands } from "./shortcut";
+import { builtInCommands } from "@/config";
 
 const defaultEngines = [
   {
@@ -99,6 +100,52 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
   const { engines } = await getSearchEngine();
   let filters = engines;
 
+  // 内置指令
+  const builtIn = builtInCommands.find(
+    (val) => val.key === key || (!key && val.key === keyword)
+  );
+
+  if (builtIn) {
+    const bkey = key || keyword;
+    const bkeyword = bkey === keyword ? "" : keyword;
+
+    if (bkey === "hs" && bkeyword) {
+      chrome.history.search({ text: bkeyword, maxResults: 8 }, (results) => {
+        console.log(bkeyword, results);
+        suggest(
+          results.map((r) => ({
+            content: `hs ${r.url}`,
+            description: `🔗 ${escapeXML(r.title)}`,
+          }))
+        );
+      });
+    }
+
+    if (bkey === "bm" && bkeyword) {
+      chrome.bookmarks.search(bkeyword, async (results) => {
+        const suggestions = results.slice(0, 8).map((item) => {
+          if (item.url) {
+            // 普通书签
+            return {
+              content: `bm ${item.url}`,
+              description: `🔖 ${escapeXML(item.title)}`,
+            };
+          } else {
+            // 是文件夹（收藏夹）
+            return {
+              content: `bm chrome://bookmarks/?id=${item.id}`,
+              description: `📁 Folder: ${escapeXML(item.title)}`,
+            };
+          }
+        });
+        suggest(suggestions);
+      });
+    }
+
+    return;
+  }
+
+  // 常规搜索
   if (key) {
     filters = engines.filter((val) => {
       return (
@@ -118,31 +165,17 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
   const suggestions = filters.map((item) => {
     return {
       content: `${item.key} `,
-      description: `${item.title}: ${item.key}`,
+      description: `⌨️ ${item.title}:${item.key}`,
     };
   });
 
-  const sys = {
-    content: `sys`,
-    description: "Extension Settings: sys",
-  };
-
-  suggest([...suggestions, sys]);
+  suggest([...suggestions]);
 });
 
 /**
  * handle user input information
  */
 chrome.omnibox.onInputEntered.addListener(async (input, a, b, c) => {
-  if (input.indexOf("sys") > -1) {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL("option/index.html"));
-    }
-    return;
-  }
-
   let selEngine = null; // search engine
 
   const { engines, defaultEngine } = await getSearchEngine();
@@ -160,12 +193,49 @@ chrome.omnibox.onInputEntered.addListener(async (input, a, b, c) => {
       keyword = "";
     }
   }
-
   selEngine = selEngine || defaultEngine;
+
+  handleCommand(selEngine, { keyword, defaultEngine });
+});
+
+//
+function escapeXML(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function isValidURL(str) {
+  try {
+    new URL(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function handleCommand(selEngine, { keyword, defaultEngine }) {
+  if (selEngine.key === "bm" || selEngine.key === "hs") {
+    // 检测keyword是否为有效连接
+    if (isValidURL(keyword)) {
+      run(keyword);
+    } else {
+      const url = defaultEngine.path.replace("{}", keyword);
+      run(url);
+    }
+    return;
+  }
+
+  if (selEngine.key === "sys") {
+    if (chrome.runtime.openOptionsPage) {
+      chrome.runtime.openOptionsPage();
+    } else {
+      window.open(chrome.runtime.getURL("option/index.html"));
+    }
+    return;
+  }
 
   const url = selEngine.path.replace("{}", keyword);
   run(url);
-});
+}
 
 /**
  * 获取用户输入信息引擎 + 搜索关键字
@@ -201,6 +271,8 @@ async function getSearchEngine(key) {
 
   const defaultEngine =
     engines.find((val) => val.isDefault) || defaultFirstEngine;
+
+  engines.push(...builtInCommands);
 
   return {
     engines,

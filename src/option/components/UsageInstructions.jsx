@@ -5,7 +5,7 @@ const { Title, Paragraph, Text } = Typography;
 
 export default function UsageInstructions() {
   return (
-    <Card title="How to Use" style={{ marginTop: 24 }}>
+    <Card title="How to Use" style={{ marginTop: 16 }}>
       <Space direction="vertical" size="middle">
         <Title level={5}>Basic Usage</Title>
         <Paragraph>

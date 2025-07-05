@@ -11,18 +11,18 @@ import {
   Col,
   Row,
   Tooltip,
+  Tabs,
 } from "antd";
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import UsageInstructions from "./components/UsageInstructions";
-import SupportAuthor from "./components/SupportAuthor";
+import BuiltInCommands from "./components/BuiltInCommands";
+import PluginIntroduction from "./components/PluginIntroduction";
+import Changelog from "./components/Changelog";
+import { builtInCommands } from "@/config";
 
-export default function () {
-  const [data, setData] = useState([]);
+const CustomCommands = ({ data, setData }) => {
   const [addVisible, setAddVisible] = useState(false);
   const [editIndex, setIndex] = useState(-1);
-
   const [form] = Form.useForm();
-
   const firstDone = useRef(false);
   const canUpdate = useRef(false);
 
@@ -37,9 +37,8 @@ export default function () {
     const engines = ssEnginesData.engines || [];
     setData(engines);
     firstDone.current = true;
-  }, []);
+  }, [setData]);
 
-  // 更新用户存储
   useEffect(() => {
     if (canUpdate.current) {
       chrome.storage.sync.set({
@@ -64,7 +63,7 @@ export default function () {
     } else if (editIndex > -1) {
       form.setFieldsValue({ ...data[editIndex] });
     }
-  }, [data, editIndex, addVisible]);
+  }, [data, editIndex, addVisible, form]);
 
   const onDel = useCallback(
     (record) => {
@@ -72,7 +71,7 @@ export default function () {
       data.splice(i, 1);
       setData([...data]);
     },
-    [data]
+    [data, setData]
   );
 
   const onChangeItem = useCallback(
@@ -87,7 +86,7 @@ export default function () {
       });
       setData([...data]);
     },
-    [data]
+    [data, setData]
   );
 
   const onFinish = (values) => {
@@ -98,7 +97,8 @@ export default function () {
       return;
     }
 
-    if (key === "sys") {
+    const obj = builtInCommands.find((val) => val.key === key);
+    if (obj) {
       message.error("This key is reserved. Please use a different key.");
       return;
     }
@@ -121,17 +121,6 @@ export default function () {
     {
       title: (
         <span>
-          Title
-          <Tooltip title="Displays the engine title when your keyword matches this engine's key">
-            <QuestionCircleOutlined />
-          </Tooltip>
-        </span>
-      ),
-      dataIndex: "title",
-    },
-    {
-      title: (
-        <span>
           Key
           <Tooltip title="Unique engine identifier. The extension uses this key to select the appropriate search engine">
             <QuestionCircleOutlined />
@@ -142,11 +131,22 @@ export default function () {
       render: (text, record) => {
         return (
           <Space>
-            {text}
+            <Tag color="blue">{text}</Tag>
             {record.isDefault && <Tag color="green">default</Tag>}
           </Space>
         );
       },
+    },
+    {
+      title: (
+        <span>
+          Title
+          <Tooltip title="Displays the engine title when your keyword matches this engine's key">
+            <QuestionCircleOutlined />
+          </Tooltip>
+        </span>
+      ),
+      dataIndex: "title",
     },
     {
       title: (
@@ -197,40 +197,25 @@ export default function () {
 
   return (
     <>
-      <div style={{ padding: "100px 0 40px 0" }}>
-        <Row justify="center">
-          <img style={{ width: 80, height: 80 }} src="../images/logo.png"></img>
-        </Row>
-        <Row justify="center">
-          <h1>TypeGo Settings</h1>
-        </Row>
-        <Row justify="center">
-          <Col span={18}>
-            <Row justify="space-between">
-              <h3>Search Engines</h3>
-              <Button
-                type="link"
-                size="small"
-                onClick={() => {
-                  setAddVisible(true);
-                }}
-              >
-                Add Engine
-              </Button>
-            </Row>
-            <Table
-              dataSource={data}
-              columns={cols}
-              size="small"
-              pagination={{ showSizeChanger: true }}
-            ></Table>
-            <UsageInstructions />
-            <SupportAuthor />
-          </Col>
-        </Row>
-      </div>
+      <Row justify="end" style={{ marginBottom: 16 }}>
+        <Button
+          type="link"
+          size="small"
+          onClick={() => {
+            setAddVisible(true);
+          }}
+        >
+          Add Command
+        </Button>
+      </Row>
+      <Table
+        dataSource={data}
+        columns={cols}
+        size="small"
+        pagination={{ showSizeChanger: true }}
+      />
       <Modal
-        title={editIndex > -1 ? "Edit Search Engine" : "Add New Search Engine"}
+        title={editIndex > -1 ? "Edit Command" : "Add New Command"}
         open={addVisible || editIndex > -1}
         onOk={onOk}
         onCancel={() => {
@@ -272,6 +257,65 @@ export default function () {
           </Form.Item>
         </Form>
       </Modal>
+    </>
+  );
+};
+
+export default function () {
+  const [data, setData] = useState([]);
+  const [activeTab, setActiveTab] = useState("custom");
+
+  const items = [
+    {
+      key: "custom",
+      label: "Custom Commands",
+      children: <CustomCommands data={data} setData={setData} />,
+    },
+    {
+      key: "builtin",
+      label: "Built-in Commands",
+      children: <BuiltInCommands />,
+    },
+    {
+      key: "plugin",
+      label: "Introduction",
+      children: <PluginIntroduction />,
+    },
+    {
+      key: "changelog",
+      label: "Changelog",
+      children: <Changelog />,
+    },
+  ];
+
+  return (
+    <>
+      <div style={{ padding: "16px" }}>
+        <Row align="middle">
+          <img
+            style={{
+              width: 24,
+              height: 24,
+              marginRight: 10,
+              display: "block",
+            }}
+            src="../images/logo.png"
+            alt="Logo"
+          />
+          <span style={{ fontWeight: "bold" }}>TypeGo Settings</span>
+        </Row>
+
+        <Row justify="center">
+          <Col span={18}>
+            <Tabs
+              items={items}
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              centered
+            />
+          </Col>
+        </Row>
+      </div>
     </>
   );
 }

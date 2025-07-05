@@ -3,7 +3,8 @@ const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
-const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const BundleAnalyzerPlugin =
+  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 const ENV = process.env.NODE_ENV;
@@ -24,7 +25,7 @@ const compiler = webpack({
   resolve: {
     extensions: [".js", ".json", ".jsx"],
     alias: {
-      "@utils": path.resolve(dir, "./src/utils"),
+      "@": path.resolve(dir, "./src"),
     },
   },
   module: {
@@ -35,7 +36,10 @@ const compiler = webpack({
           {
             loader: "babel-loader",
             options: {
-              presets: [["@babel/preset-env", { targets: "defaults" }], "@babel/preset-react"],
+              presets: [
+                ["@babel/preset-env", { targets: "defaults" }],
+                "@babel/preset-react",
+              ],
               plugins: ["@babel/plugin-transform-runtime"],
             },
           },
