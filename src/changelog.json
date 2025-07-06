@@ -7,6 +7,10 @@
   {
     "version": "1.0.3",
     "date": "2025-07-05",
-    "log": ["Added hs built-in command for searching history", "Added bm built-in command for searching bookmarks"]
+    "log": [
+      "Added hs built-in command for searching history",
+      "Added bm built-in command for searching bookmarks",
+      "Added support for multiple URLs per command"
+    ]
   }
 ]

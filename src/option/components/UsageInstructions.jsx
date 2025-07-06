@@ -37,12 +37,15 @@ export default function UsageInstructions() {
         </Paragraph>
 
         <Paragraph>
-          <Text strong>URL Template:</Text> Use {} as placeholder for your
-          search query
+          <Text strong>URL Templates:</Text>{" "}
+          {`You can add multiple URL templates
+          per command. Use {} as placeholder for search query (optional)`}
           <br />
-          <Text strong>Example: </Text>
-          <Text code>{`https://www.google.com/search?q={}`}</Text> will search
-          Google with your query
+          <Text strong>Examples: </Text>
+          <br />
+          <Text code>{`https://www.google.com/search?q={}`}</Text> (with query)
+          <br />
+          <Text code>{`https://example.com/dashboard`}</Text> (without query)
         </Paragraph>
       </Space>
     </Card>
