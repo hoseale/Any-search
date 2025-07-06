@@ -105,13 +105,12 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
     (val) => val.key === key || (!key && val.key === keyword)
   );
 
-  if (builtIn) {
-    const bkey = key || keyword;
-    const bkeyword = bkey === keyword ? "" : keyword;
+  const bkey = key || keyword;
+  const bkeyword = bkey === keyword ? "" : keyword;
 
-    if (bkey === "hs" && bkeyword) {
+  if (builtIn && bkeyword) {
+    if (bkey === "hs") {
       chrome.history.search({ text: bkeyword, maxResults: 8 }, (results) => {
-        console.log(bkeyword, results);
         suggest(
           results.map((r) => ({
             content: `hs ${r.url}`,
@@ -120,10 +119,9 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
         );
       });
     }
-
-    if (bkey === "bm" && bkeyword) {
+    if (bkey === "bm") {
       chrome.bookmarks.search(bkeyword, async (results) => {
-        const suggestions = results.slice(0, 8).map((item) => {
+        const suggestions = results.map(async (item) => {
           if (item.url) {
             // 普通书签
             return {
@@ -131,17 +129,30 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
               description: `🔖 ${escapeXML(item.title)}`,
             };
           } else {
-            // 是文件夹（收藏夹）
-            return {
-              content: `bm chrome://bookmarks/?id=${item.id}`,
-              description: `📁 Folder: ${escapeXML(item.title)}`,
-            };
+            const children = await new Promise((resolve) => {
+              chrome.bookmarks.getChildren(item.id, resolve);
+            });
+            return children?.map((val) => {
+              if (val.url) {
+                return {
+                  content: `bm ${val.url}`,
+                  description: `🔖 ${escapeXML(val.title)}`,
+                };
+              } else {
+                return {
+                  content: `bm chrome://bookmarks/?id=${val.id}`,
+                  description: `📁 Folder: ${escapeXML(
+                    item.title + "/" + val.title
+                  )}`,
+                };
+              }
+            });
           }
         });
-        suggest(suggestions);
+        const ls = await Promise.all(suggestions);
+        suggest(ls.flat());
       });
     }
-
     return;
   }
 
@@ -165,7 +176,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
   const suggestions = filters.map((item) => {
     return {
       content: `${item.key} `,
-      description: `⌨️ ${item.title}:${item.key}`,
+      description: `⌨️ ${item.title}：${item.key}`,
     };
   });
 
@@ -233,8 +244,15 @@ function handleCommand(selEngine, { keyword, defaultEngine }) {
     return;
   }
 
-  const url = selEngine.path.replace("{}", keyword);
-  run(url);
+  if (Array.isArray(selEngine.path)) {
+    selEngine.path.forEach((str) => {
+      const url = str.replace("{}", keyword);
+      run(url, { newTab: true });
+    });
+  } else {
+    const url = selEngine.path.replace("{}", keyword);
+    run(url);
+  }
 }
 
 /**
@@ -283,12 +301,19 @@ async function getSearchEngine(key) {
 /**
  * open search page
  */
-async function run(url) {
-  const { id } = (await chrome.tabs.getCurrent()) || {};
-  chrome.tabs.update(id, {
-    active: true,
-    url: url,
-  });
+async function run(url, { newTab } = {}) {
+  if (newTab) {
+    chrome.tabs.create({
+      url,
+      active: true,
+    });
+  } else {
+    const { id } = (await chrome.tabs.getCurrent()) || {};
+    chrome.tabs.update(id, {
+      active: true,
+      url: url,
+    });
+  }
 }
 
 initCommands();

@@ -12,14 +12,16 @@ import {
   Row,
   Tooltip,
   Tabs,
+  Flex,
 } from "antd";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { QuestionCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import BuiltInCommands from "./components/BuiltInCommands";
 import PluginIntroduction from "./components/PluginIntroduction";
 import Changelog from "./components/Changelog";
 import { builtInCommands } from "@/config";
 
-const CustomCommands = ({ data, setData }) => {
+const CustomCommands = () => {
+  const [data, setData] = useState([]);
   const [addVisible, setAddVisible] = useState(false);
   const [editIndex, setIndex] = useState(-1);
   const [form] = Form.useForm();
@@ -35,15 +37,29 @@ const CustomCommands = ({ data, setData }) => {
       "ssEnginesData"
     );
     const engines = ssEnginesData.engines || [];
+    engines.forEach((val) => {
+      if (!Array.isArray(val.path) && val.path) {
+        val.path = [val.path];
+      }
+    });
+
     setData(engines);
     firstDone.current = true;
   }, [setData]);
 
   useEffect(() => {
     if (canUpdate.current) {
+      const ls = data.map((val) => {
+        const paths = val.path;
+        const path = paths?.length == 1 ? paths[0] : paths;
+        return {
+          ...val,
+          path,
+        };
+      });
       chrome.storage.sync.set({
         ssEnginesData: {
-          engines: data,
+          engines: ls,
         },
       });
     }
@@ -58,7 +74,7 @@ const CustomCommands = ({ data, setData }) => {
       form.setFieldsValue({
         title: "",
         key: "",
-        path: "",
+        path: [""],
       });
     } else if (editIndex > -1) {
       form.setFieldsValue({ ...data[editIndex] });
@@ -158,6 +174,13 @@ const CustomCommands = ({ data, setData }) => {
         </span>
       ),
       dataIndex: "path",
+      render: (path) => (
+        <Space direction="vertical">
+          {path.map((path, i) => (
+            <div key={i}>{path}</div>
+          ))}
+        </Space>
+      ),
     },
     {
       title: "Actions",
@@ -212,7 +235,7 @@ const CustomCommands = ({ data, setData }) => {
         dataSource={data}
         columns={cols}
         size="small"
-        pagination={{ showSizeChanger: true }}
+        pagination={{ showSizeChanger: true, defaultPageSize: 50 }}
       />
       <Modal
         title={editIndex > -1 ? "Edit Command" : "Add New Command"}
@@ -246,14 +269,44 @@ const CustomCommands = ({ data, setData }) => {
             <Input />
           </Form.Item>
 
-          <Form.Item
-            label="URL Template"
-            name="path"
-            rules={[
-              { required: true, message: "Please enter the URL template" },
-            ]}
-          >
-            <Input.TextArea />
+          <Form.Item label="URL Templates" required>
+            <Form.List name="path">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Flex key={key} align="start" gap={8}>
+                      <Form.Item
+                        {...restField}
+                        name={name}
+                        rules={[
+                          {
+                            required: true,
+                            message: "Please enter URL template",
+                          },
+                        ]}
+                        style={{ flex: 1 }}
+                      >
+                        <Input.TextArea placeholder="https://example.com/search?q={}" />
+                      </Form.Item>
+                      {fields.length > 1 && (
+                        <CloseCircleOutlined
+                          style={{
+                            fontSize: 24,
+                            color: "red",
+                          }}
+                          onClick={() => remove(name)}
+                        />
+                      )}
+                    </Flex>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block>
+                      Add URL Template
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
           </Form.Item>
         </Form>
       </Modal>
@@ -262,14 +315,13 @@ const CustomCommands = ({ data, setData }) => {
 };
 
 export default function () {
-  const [data, setData] = useState([]);
   const [activeTab, setActiveTab] = useState("custom");
 
   const items = [
     {
       key: "custom",
       label: "Custom Commands",
-      children: <CustomCommands data={data} setData={setData} />,
+      children: <CustomCommands />,
     },
     {
       key: "builtin",
